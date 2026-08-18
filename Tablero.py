@@ -164,3 +164,65 @@ def validar_intento(tablero, intento):
     }
 
     return porcentaje
+
+# ------------------------------------------------------------
+# CARGA DE ARCHIVOS
+# ------------------------------------------------------------
+
+def cargar_sudokus(ruta):
+    """Lee el archivo sudokus.lfp y devuelve una lista de objetos Tablero."""
+    tableros = []
+    with open(ruta, 'r', encoding='utf-8') as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea:
+                continue
+            partes = linea.split(',')
+            if len(partes) >= 3:
+                id_sudoku = int(partes[0].strip())
+                dificultad = partes[1].strip()
+                cadena = partes[2].strip()
+                # Si la cadena tiene espacios, los eliminamos
+                cadena = cadena.replace(' ', '')
+                tablero = Tablero(id_sudoku, dificultad, cadena)
+                tableros.append(tablero)
+    return tableros
+
+
+def cargar_jugadores(ruta):
+    """Lee el archivo jugadores.lfp y devuelve una lista de objetos Jugador."""
+    jugadores = []
+    with open(ruta, 'r', encoding='utf-8') as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea:
+                continue
+            partes = linea.split(',')
+            if len(partes) >= 4:
+                carnet = int(partes[0].strip())
+                nombre = partes[1].strip()
+                apellido = partes[2].strip()
+                nivel = partes[3].strip()
+                jugador = Jugador(carnet, nombre, apellido, nivel)
+                jugadores.append(jugador)
+    return jugadores
+
+
+def cargar_intentos(ruta):
+    """Lee el archivo intentos.lfp y devuelve una lista de objetos Intento."""
+    intentos = []
+    with open(ruta, 'r', encoding='utf-8') as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea:
+                continue
+            partes = linea.split(',')
+            if len(partes) >= 5:
+                carnet = int(partes[0].strip())
+                id_sudoku = int(partes[1].strip())
+                solucion = partes[2].strip().replace(' ', '')
+                tiempo = int(partes[3].strip())
+                fecha = partes[4].strip()
+                intento = Intento(carnet, id_sudoku, solucion, tiempo, fecha)
+                intentos.append(intento)
+    return intentos
