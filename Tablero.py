@@ -1,7 +1,12 @@
+import os
+
+# ------------------------------------------------------------
+# CLASES
+# ------------------------------------------------------------
+
+
 class Tablero:
     """
-    Representa un tablero de Sudoku.
-    Atributos:
         id: identificador único (int)
         dificultad: str ('Facil', 'Media', 'Dificil', 'Experto')
         matriz: lista de listas 9x9 con números (0 = vacío)
@@ -73,3 +78,89 @@ class Intento:
 
     def obtener_valor(self, fila, col):
         return self.matriz[fila][col]
+    
+
+# ------------------------------------------------------------
+# FUNCIONES DE VALIDACION
+# ------------------------------------------------------------
+
+def es_conjunto_valido(lista_numeros):
+    """
+    Verifica que una lista de 9 números (puede contener 0) cumpla con la regla:
+    los números del 1 al 9 no se repiten. Los ceros se ignoran.
+    """
+    vistos = set()
+    for num in lista_numeros:
+        if num != 0:
+            if num < 1 or num > 9:
+                return False
+            if num in vistos:
+                return False
+            vistos.add(num)
+    return True
+
+
+def validar_intento(tablero, intento):
+
+    """
+    Valida un intento contra el tablero original.
+    Llena los atributos porcentaje_validez y resuelto_correctamente del intento.
+    Retorna el porcentaje de validez (float).
+    """
+
+    # 1. Verificar que las pistas no hayan sido modificadas
+    pistas_modificadas = False
+    for i in range(9):
+        for j in range(9):
+            if tablero.es_pista(i, j):
+                if intento.obtener_valor(i, j) != tablero.obtener_valor(i, j):
+                    pistas_modificadas = True
+                    break
+
+        if pistas_modificadas:
+            break
+
+    # 2. Validar filas, columnas y cajas
+    filas_validas = 0
+    columnas_validas = 0
+    cajas_validas = 0
+
+    # Validar filas
+    for i in range(9):
+        if es_conjunto_valido(intento.matriz[i]):
+            filas_validas += 1
+
+    # Validar columnas
+    for j in range(9):
+        columna = [intento.matriz[i][j] for i in range(9)]
+        if es_conjunto_valido(columna):
+            columnas_validas += 1
+
+    # Validar cajas 3x3
+    for inicio_fila in range(0, 9, 3):
+        for inicio_col in range(0, 9, 3):
+            caja = []
+            for i in range(inicio_fila, inicio_fila+3):
+                for j in range(inicio_col, inicio_col+3):
+                    caja.append(intento.matriz[i][j])
+            if es_conjunto_valido(caja):
+                cajas_validas += 1
+
+
+    total_validas = filas_validas + columnas_validas + cajas_validas
+    porcentaje = (total_validas / 27) * 100
+
+    # Determinar si está resuelto correctamente
+    correcto = (porcentaje == 100.0 and not pistas_modificadas)
+
+    # Guardar resultados en el objeto intento
+    intento.porcentaje_validez = porcentaje
+    intento.resuelto_correctamente = correcto
+    intento.detalle_validacion = {
+        'filas_validas': filas_validas,
+        'columnas_validas': columnas_validas,
+        'cajas_validas': cajas_validas,
+        'pistas_modificadas': pistas_modificadas
+    }
+
+    return porcentaje
