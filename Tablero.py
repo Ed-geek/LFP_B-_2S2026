@@ -328,3 +328,144 @@ def calcular_metricas(resultados):
     top_10 = top_tiempos[:10]
 
     return stats_sudoku, stats_jugador, top_10
+
+
+#  -----------------------------------------------------------
+# GENERACIÓN DE REPORTES HTML
+# ------------------------------------------------------------
+
+def generar_reporte_sudoku(stats_sudoku, tableros):
+    """Genera reporte1: Resumen por Sudoku."""
+    html = """
+    <html>
+    <head><meta charset="UTF-8"><title>Resumen por Sudoku</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { border-collapse: collapse; width: 80%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+    </head>
+    <body>
+    <h1>Resumen por Sudoku</h1>
+    <table>
+        <tr><th>ID</th><th>Dificultad</th><th>Intentos</th><th>Tiempo Promedio (seg)</th><th>Tasa Éxito (%)</th></tr>
+    """
+    # Ordenar por ID
+    for id_s in sorted(stats_sudoku.keys()):
+        data = stats_sudoku[id_s]
+        # Buscar dificultad en tableros
+        dificultad = "N/A"
+        for t in tableros:
+            if t.id == id_s:
+                dificultad = t.dificultad
+                break
+        html += f"""
+        <tr>
+            <td>{id_s}</td>
+            <td>{dificultad}</td>
+            <td>{data['total_intentos']}</td>
+            <td>{data['tiempo_promedio']:.2f}</td>
+            <td>{data['tasa_exito']:.2f}</td>
+        </tr>
+        """
+    html += """
+    </table>
+    </body>
+    </html>
+    """
+    return html
+
+
+def generar_reporte_jugador(stats_jugador, jugadores):
+    """Genera reporte2: Rendimiento por Jugador."""
+    html = """
+    <html>
+    <head><meta charset="UTF-8"><title>Rendimiento por Jugador</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { border-collapse: collapse; width: 90%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #008CBA; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+    </head>
+    <body>
+    <h1>Rendimiento por Jugador</h1>
+    <table>
+        <tr><th>Carnet</th><th>Nombre</th><th>Nivel</th><th>Tableros Intentados</th>
+            <th>Validez Promedio (%)</th><th>Tiempo Promedio (seg)</th><th>Resueltos Perfectos</th></tr>
+    """
+    # Crear diccionario de jugadores por carnet
+    jugadores_dict = {j.carnet: j for j in jugadores}
+    for carnet in sorted(stats_jugador.keys()):
+        data = stats_jugador[carnet]
+        jugador = jugadores_dict.get(carnet)
+        nombre = jugador.nombre_completo() if jugador else "Desconocido"
+        nivel = jugador.nivel if jugador else "N/A"
+        html += f"""
+        <tr>
+            <td>{carnet}</td>
+            <td>{nombre}</td>
+            <td>{nivel}</td>
+            <td>{data['cantidad_tableros']}</td>
+            <td>{data['validez_promedio']:.2f}</td>
+            <td>{data['tiempo_promedio']:.2f}</td>
+            <td>{data['exitos_perfectos']}</td>
+        </tr>
+        """
+    html += """
+    </table>
+    </body>
+    </html>
+    """
+    return html
+
+
+def generar_reporte_top10(top_10, jugadores, tableros):
+    """Genera reporte3: Top 10 Mejores Tiempos."""
+    html = """
+    <html>
+    <head><meta charset="UTF-8"><title>Top 10 Mejores Tiempos</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { border-collapse: collapse; width: 70%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f44336; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+    </head>
+    <body>
+    <h1>Top 10 Mejores Tiempos (Resueltos Correctamente)</h1>
+    <table>
+        <tr><th>Posición</th><th>Carnet</th><th>Nombre</th><th>ID Sudoku</th><th>Dificultad</th><th>Tiempo (seg)</th></tr>
+    """
+    # Preparar diccionarios
+    jugadores_dict = {j.carnet: j for j in jugadores}
+    tableros_dict = {t.id: t for t in tableros}
+
+    pos = 1
+    for carnet, id_s, tiempo in top_10:
+        jugador = jugadores_dict.get(carnet)
+        nombre = jugador.nombre_completo() if jugador else "Desconocido"
+        tablero = tableros_dict.get(id_s)
+        dificultad = tablero.dificultad if tablero else "N/A"
+        html += f"""
+        <tr>
+            <td>{pos}</td>
+            <td>{carnet}</td>
+            <td>{nombre}</td>
+            <td>{id_s}</td>
+            <td>{dificultad}</td>
+            <td>{tiempo}</td>
+        </tr>
+        """
+        pos += 1
+
+    html += """
+    </table>
+    </body>
+    </html>
+    """
+    return html
