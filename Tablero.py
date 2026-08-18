@@ -226,3 +226,105 @@ def cargar_intentos(ruta):
                 intento = Intento(carnet, id_sudoku, solucion, tiempo, fecha)
                 intentos.append(intento)
     return intentos
+
+# ------------------------------------------------------------
+# PROCESAMIENTO Y MÉTRICAS
+# ------------------------------------------------------------
+
+def procesar_todos_intentos(tableros, intentos):
+    """
+    Valida todos los intentos y los asocia con sus tableros.
+    Devuelve un diccionario con estadísticas.
+    """
+    # Crear un diccionario para acceder rápido a los tableros por id
+    tableros_dict = {t.id: t for t in tableros}
+
+    resultados = {
+        'intentos_validados': [],
+        'estadisticas_sudokus': {},
+        'estadisticas_jugadores': {}
+    }
+
+    for intento in intentos:
+        tablero = tableros_dict.get(intento.id_sudoku)
+        if tablero is None:
+            print(f"Advertencia: Intento con id_sudoku {intento.id_sudoku} no encontrado.")
+            continue
+        # Validar
+        porcentaje = validar_intento(tablero, intento)
+        # Guardar referencia al tablero y al jugador después
+        intento.tablero = tablero
+        resultados['intentos_validados'].append(intento)
+
+    return resultados
+
+
+def calcular_metricas(resultados):
+    """
+    A partir de los intentos validados, calcula:
+    - Por cada sudoku: cantidad de intentos, tiempo promedio, tasa de éxito.
+    - Por cada jugador: cantidad de tableros intentados, porcentaje de validez promedio,
+      tiempo promedio, cantidad de resueltos perfectamente.
+    - Top 10 mejores tiempos (entre resueltos correctamente).
+    """
+    intentos = resultados['intentos_validados']
+
+    # ---- Estadísticas por Sudoku ----
+    stats_sudoku = {}
+    for intento in intentos:
+        id_s = intento.id_sudoku
+        if id_s not in stats_sudoku:
+            stats_sudoku[id_s] = {
+                'total_intentos': 0,
+                'suma_tiempos': 0,
+                'exitos': 0,  # resueltos correctamente
+                'tiempos_exitos': []  # para top 10
+            }
+        stats_sudoku[id_s]['total_intentos'] += 1
+        stats_sudoku[id_s]['suma_tiempos'] += intento.tiempo
+        if intento.resuelto_correctamente:
+            stats_sudoku[id_s]['exitos'] += 1
+            stats_sudoku[id_s]['tiempos_exitos'].append((intento.carnet, intento.tiempo))
+
+    # Calcular promedios y tasas
+    for id_s, data in stats_sudoku.items():
+        total = data['total_intentos']
+        data['tiempo_promedio'] = data['suma_tiempos'] / total if total > 0 else 0
+        data['tasa_exito'] = (data['exitos'] / total) * 100 if total > 0 else 0
+
+    # ---- Estadísticas por Jugador ----
+    stats_jugador = {}
+    for intento in intentos:
+        carnet = intento.carnet
+        if carnet not in stats_jugador:
+            stats_jugador[carnet] = {
+                'total_intentos': 0,
+                'suma_tiempos': 0,
+                'suma_validez': 0.0,
+                'exitos_perfectos': 0,
+                'tableros_distintos': set()
+            }
+        stats_jugador[carnet]['total_intentos'] += 1
+        stats_jugador[carnet]['suma_tiempos'] += intento.tiempo
+        stats_jugador[carnet]['suma_validez'] += intento.porcentaje_validez
+        stats_jugador[carnet]['tableros_distintos'].add(intento.id_sudoku)
+        if intento.resuelto_correctamente:
+            stats_jugador[carnet]['exitos_perfectos'] += 1
+
+    # Calcular promedios
+    for carnet, data in stats_jugador.items():
+        total = data['total_intentos']
+        data['validez_promedio'] = data['suma_validez'] / total if total > 0 else 0
+        data['tiempo_promedio'] = data['suma_tiempos'] / total if total > 0 else 0
+        data['cantidad_tableros'] = len(data['tableros_distintos'])
+
+    # ---- Top 10 mejores tiempos (entre exitosos) ----
+    top_tiempos = []
+    for intento in intentos:
+        if intento.resuelto_correctamente:
+            top_tiempos.append((intento.carnet, intento.id_sudoku, intento.tiempo))
+    # Ordenar por tiempo (menor a mayor)
+    top_tiempos.sort(key=lambda x: x[2])
+    top_10 = top_tiempos[:10]
+
+    return stats_sudoku, stats_jugador, top_10
