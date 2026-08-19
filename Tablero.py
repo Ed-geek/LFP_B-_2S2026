@@ -469,3 +469,104 @@ def generar_reporte_top10(top_10, jugadores, tableros):
     </html>
     """
     return html
+
+# ------------------------------------------------------------
+# FUNCIÓN PRINCIPAL Y MENÚ
+# ------------------------------------------------------------
+
+def main():
+    # Variables globales para almacenar los datos cargados
+    tableros = []
+    jugadores = []
+    intentos = []
+    resultados = None
+    stats_sudoku = {}
+    stats_jugador = {}
+    top_10 = []
+
+    while True:
+        print("\n" + "="*45)
+        print("   TORNEO DE SUDOKU - NUMERIX")
+        print("="*45)
+        print("1. Cargar archivo de sudokus")
+        print("2. Cargar archivo de jugadores")
+        print("3. Cargar archivo de intentos")
+        print("4. Validar y calificar intentos")
+        print("5. Generar Reporte: Resumen por Sudoku")
+        print("6. Generar Reporte: Rendimiento por Jugador")
+        print("7. Generar Reporte: Top 10 Mejores Tiempos")
+        print("8. Salir")
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == '1':
+            ruta = input("Ingrese la ruta del archivo sudokus.lfp: ")
+            try:
+                tableros = cargar_sudokus(ruta)
+                print(f"Se cargaron {len(tableros)} tableros.")
+            except Exception as e:
+                print(f"Error al cargar sudokus: {e}")
+
+        elif opcion == '2':
+            ruta = input("Ingrese la ruta del archivo jugadores.lfp: ")
+            try:
+                jugadores = cargar_jugadores(ruta)
+                print(f"Se cargaron {len(jugadores)} jugadores.")
+            except Exception as e:
+                print(f"Error al cargar jugadores: {e}")
+
+        elif opcion == '3':
+            ruta = input("Ingrese la ruta del archivo intentos.lfp: ")
+            try:
+                intentos = cargar_intentos(ruta)
+                print(f"Se cargaron {len(intentos)} intentos.")
+            except Exception as e:
+                print(f"Error al cargar intentos: {e}")
+
+        elif opcion == '4':
+            if not tableros or not intentos:
+                print("Debe cargar al menos los archivos de sudokus e intentos.")
+                continue
+            print("Validando intentos...")
+            resultados = procesar_todos_intentos(tableros, intentos)
+            # Calcular métricas
+            stats_sudoku, stats_jugador, top_10 = calcular_metricas(resultados)
+            print("Validación completada.")
+
+        elif opcion == '5':
+            if not stats_sudoku:
+                print("Primero debe validar los intentos (opción 4).")
+                continue
+            html = generar_reporte_sudoku(stats_sudoku, tableros)
+            with open("reporte_sudoku.html", "w", encoding="utf-8") as f:
+                f.write(html)
+            print("Reporte 'reporte_sudoku.html' generado.")
+
+        elif opcion == '6':
+            if not stats_jugador:
+                print("Primero debe validar los intentos (opción 4).")
+                continue
+            html = generar_reporte_jugador(stats_jugador, jugadores)
+            with open("reporte_jugador.html", "w", encoding="utf-8") as f:
+                f.write(html)
+            print("Reporte 'reporte_jugador.html' generado.")
+
+        elif opcion == '7':
+            if top_10 is None:
+                print("Primero debe validar los intentos (opción 4).")
+                continue
+            html = generar_reporte_top10(top_10, jugadores, tableros)
+            with open("reporte_top10.html", "w", encoding="utf-8") as f:
+                f.write(html)
+            print("Reporte 'reporte_top10.html' generado.")
+
+        elif opcion == '8':
+            print("¡Hasta luego!")
+            break
+
+        else:
+            print("Opción no válida. Intente de nuevo.")
+
+
+if __name__ == "__main__":
+    main()
+
